@@ -1,0 +1,140 @@
+import pyttsx3
+import speech_recognition as sr
+import datetime
+import webbrowser
+import winshell
+import pyjokes
+import ctypes
+from ecapture import ecapture as ec
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
+
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+
+def wishMe():
+    hour = int(datetime.datetime.now().hour)
+    if 0 <= hour < 12:
+        speak("Good Morning!")
+    elif 12 <= hour < 18:
+        speak("Good Afternoon!")
+    else:
+        speak("Good Evening!")
+
+
+def takeCommand():
+    recognizer = sr.Recognizer()
+    microphone = sr.Microphone()
+
+    with microphone as source:
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+        audio = recognizer.listen(source)
+
+        Response = {
+            "error": None,
+            "transcription": None
+        }
+
+        try:
+            Response["transcription"] = recognizer.recognize_google(audio)
+        except sr.RequestError:
+            # API was unreachable or unresponsive
+            Response["error"] = "API unavailable, Please check Internet Connection"
+        except sr.UnknownValueError:
+            # speech was unintelligible
+            Response["error"] = "Unable to recognize speech"
+
+        return Response
+
+
+if __name__ == "__main__":
+    wishMe()
+
+    name = "Siya , Your Voice Assistant"
+    speak("I am " + name)
+    speak("How can i help you")
+
+    while True:
+        print("Listening...")
+        command = takeCommand()
+
+        if command["error"]:
+            print("ERROR: {}".format(command["error"]))
+            break
+        else:
+            query = command["transcription"].lower()
+
+        print("You said: {}". format(query))
+
+        if 'open youtube' in query:
+            speak("Here you go to Youtube\n")
+            webbrowser.open("youtube.com")
+
+        elif 'open google' in query:
+            speak("Here you go to Google\n")
+            webbrowser.open("google.com")
+
+        elif "wikipedia" in query:
+            webbrowser.open("wikipedia.com")
+
+        elif 'the time' in query:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")
+            speak(f"The time is {strTime}")
+
+        elif "Good Morning" in query:
+            speak("A warm" + query)
+            speak("How are you")
+            speak(name)
+
+        elif 'how are you' in query:
+            speak("I am fine, Thank you")
+            speak("How are you")
+
+        elif 'fine' in query or "good" in query:
+            speak("It's good to know that your fine")
+
+        elif "change my name to" in query:
+            query = query.replace("change my name to", "")
+            name = query
+
+        elif "change name" in query:
+            speak("What would you like to call me, Sir ")
+            name = takeCommand()
+            speak("Thanks for naming me")
+
+        elif "what's your name" in query or "what is your name" in query:
+            speak("My friends call me")
+            speak(name)
+            print("My friends call me", name)
+
+        elif "who made you" in query or "who created you" in query:
+            speak("I have been created.")
+
+        elif 'joke' in query:
+            speak(pyjokes.get_joke())
+
+        elif "who i am" in query:
+            speak("If you talk then definitely your human.")
+
+        elif "who are you" in query:
+            speak("I am your virtual assistant created by you")
+
+        elif 'lock window' in query:
+            speak("locking the device")
+            ctypes.windll.user32.LockWorkStation()
+
+        elif 'empty recycle bin' in query:
+            winshell.recycle_bin().empty(confirm=False, show_progress=False, sound=True)
+            speak("Recycle Bin Recycled")
+
+        elif "camera" in query or "take a photo" in query:
+            ec.capture(0, "Jarvis Camera ", "img.jpg")
+
+        elif 'exit' in query:
+            speak("Thanks for giving me your time")
+            exit()
